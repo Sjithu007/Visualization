@@ -1,0 +1,117 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+%matplotlib inline
+
+data = pd.read_csv("C:/Users/Jithu/Desktop/results.csv")
+data.head()
+
+
+def newdataset(dataset):
+    con=[]
+    for index, rows in dataset.iterrows():
+        if rows.results not in con:
+            con.append(rows.results)
+    con.remove('Tie')
+    
+    win=[]
+    for c in con:
+        win.append(dataset.loc[newdata.results==c,'results'].count())
+        
+    d = pd.DataFrame({'country':con,'noofwins':win})
+    d=d.sort_values(by='noofwins',ascending=False)
+    d=d.head(5)
+    return d
+
+
+def result(row):
+    if row['home_score'] > row['away_score']:
+        return row['home_team']
+    elif row['home_score'] < row['away_score']:
+        return row['away_team']
+    else:
+        return("Tie")
+
+
+data['results'] =data[['home_score','away_score','home_team','away_team']].apply(result,axis=1)
+
+data['date'] = pd.to_datetime(data['date'])
+data['year']  = data['date'].apply(lambda time: time.year)
+match_count = data['year'].value_counts()
+
+plt.figure(figsize=(12,8))
+sns.lineplot(match_count.index,match_count.values, color='red', lw=3)
+plt.title('Number of matches played in each year', fontsize=20)
+plt.ylabel('No of matches', fontsize=12)
+plt.xlabel('Year', fontsize=12)
+
+plt.figure(figsize=(20,8))
+sns.countplot(x='results',data=data, order =data['results'].value_counts()[1:11].index)
+plt.title('Top 10 Countries with most wins', fontsize=25)
+plt.ylabel('No of wins', fontsize=15)
+plt.xlabel('Country', fontsize=15)
+
+for i in range(1870,2019,50):
+    plt.figure(figsize=(10,4))
+    newdata= data[(data.year >= i)& (data.year <= i+50)]
+    sns.countplot(x='results',data=newdata , order = newdata['results'].value_counts()[1:6].index)
+    #print(newdata['results'].value_counts())
+    plt.title('Top 5 Countries in '+str(i)+'-'+str(i+50), fontsize=20)
+    plt.ylabel('No of wins', fontsize=15)
+    plt.xlabel('Countries', fontsize=15)
+
+for i in range(1870,2019,50):
+    plt.figure(figsize=(6,4))
+    
+    newdata= data[(data.year >= i)& (data.year <= i+50)]
+    
+    d = newdataset(newdata)
+    
+    ax=sns.scatterplot(y="noofwins", x="country",hue='country',data=d)
+    ax.set_title("Top 5 teams :" +str(i)+"-"+str(i+50),size=20)
+    ax.set_xlabel("Countries" ,size=15)
+    ax.set_ylabel("No of Wins" ,size=15)
+
+
+for i in range(1870,2019,50):
+    plt.figure(figsize=(10,5))
+    
+    newdata= data[(data.year >= i)& (data.year <= i+50)]
+    
+    d = newdataset(newdata) 
+    ax = sns.boxplot(x="country", y="noofwins", data=d,linewidth=5, hue="country")
+    ax.set_title("Top 5 teams :" +str(i)+"-"+str(i+50),size=20)
+    ax.set_xlabel("Countries" ,size=15)
+    ax.set_ylabel("No of Wins" ,size=15)
+
+
+for i in range(1870,2019,50):
+    plt.figure(figsize=(10,5))
+    
+    newdata= data[(data.year >= i)& (data.year <= i+50)]
+    
+    d = newdataset(newdata) 
+    ax =  sns.stripplot(x="country", y="noofwins", data=d, size=30, marker="D",  edgecolor="gray", alpha=.25)
+    ax.set_title("Top 5 teams :" +str(i)+"-"+str(i+50),size=20)
+    ax.set_xlabel("Countries" ,size=15)
+    ax.set_ylabel("No of Wins" ,size=15)
+
+def home_wins(row):
+         if row['home_team'] == row['results']:
+            return("Home")
+         elif row['home_team'] != row['results'] and row['results'] == 'Tie':
+            return("Tie")
+         else:
+            return("Away")
+
+data['home_win'] = pd.DataFrame(data[['home_team','results']].apply(home_wins,axis=1))
+
+plt.figure(figsize=(7,6))
+sns.countplot(x='home_win', palette='rainbow',hue='neutral',data=data[data.home_win != 'Tie'])
+plt.title('Home vs Away wins', fontsize=20)
+plt.ylabel('No of wins', fontsize=12)
+plt.xlabel('Home or Away', fontsize=12)
+
+data_corr = data.corr()
+sns.heatmap(data_corr,cmap='plasma_r', lw = 1, annot = True)
